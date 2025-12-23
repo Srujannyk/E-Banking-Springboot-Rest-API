@@ -1,0 +1,8 @@
+spring:
+  application:
+    name: ebanking
+  profiles:
+    active: dev
+
+server:
+  port: 8055
