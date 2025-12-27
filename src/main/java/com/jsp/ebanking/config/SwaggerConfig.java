@@ -23,7 +23,7 @@ public class SwaggerConfig {
 								.url("https://www.ebanking.com"))
 						.license(new License().name("Apache 2.0")
 								.url("https://www.apache.org/licenses/LICENSE-2.0.html")))
-				.servers(List.of(new Server().url("http://localhost:8055").description("Local Development Server"),
+				.servers(List.of(new Server().url("http://localhost").description("Local Development Server"),
 						new Server().url("https://api.ebanking.com").description("Production Server")));
 	}
 }

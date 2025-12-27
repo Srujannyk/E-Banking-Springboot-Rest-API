@@ -25,5 +25,25 @@ public class GlobalExceptionHandler {
 	public ResponseEntity<Object> handle(DataExistsException exception) {
 		return ResponseEntity.status(409).body(new ErrorDto(exception.getMessage()));
 	}
+	
+	@ExceptionHandler(FailedToSendOtpException.class)
+	public ResponseEntity<Object> handle(FailedToSendOtpException exception) {
+		return ResponseEntity.status(500).body(new ErrorDto(exception.getMessage()));
+	}
+	
+	@ExceptionHandler(ExpiredException.class)
+	public ResponseEntity<Object> handle(ExpiredException exception) {
+		return ResponseEntity.status(408).body(new ErrorDto(exception.getMessage()));
+	}
+
+	@ExceptionHandler(MissMatchException.class)
+	public ResponseEntity<Object> handle(MissMatchException exception) {
+		return ResponseEntity.status(400).body(new ErrorDto(exception.getMessage()));
+	}
+	
+	@ExceptionHandler(DataNotFoundException.class)
+	public ResponseEntity<Object> handle(DataNotFoundException exception) {
+		return ResponseEntity.status(404).body(new ErrorDto(exception.getMessage()));
+	}
 
 }
