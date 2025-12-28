@@ -3,6 +3,7 @@ package com.jsp.ebanking.service;
 
 import org.springframework.http.ResponseEntity;
 
+import com.jsp.ebanking.dto.LoginDto;
 import com.jsp.ebanking.dto.OtpDto;
 import com.jsp.ebanking.dto.ResetPasswordDto;
 import com.jsp.ebanking.dto.ResponseDto;
@@ -22,4 +23,5 @@ public interface UserService {
 
 	ResponseEntity<ResponseDto> resetPassword(ResetPasswordDto dto);
 
+	ResponseEntity<ResponseDto> login(LoginDto dto);
 }

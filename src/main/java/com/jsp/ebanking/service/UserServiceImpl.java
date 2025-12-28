@@ -2,10 +2,15 @@ package com.jsp.ebanking.service;
 
 import java.security.SecureRandom;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import com.jsp.ebanking.dto.BankingRole;
+import com.jsp.ebanking.dto.LoginDto;
 import com.jsp.ebanking.dto.OtpDto;
 import com.jsp.ebanking.dto.ResetPasswordDto;
 import com.jsp.ebanking.dto.ResponseDto;
@@ -16,6 +21,7 @@ import com.jsp.ebanking.exception.DataNotFoundException;
 import com.jsp.ebanking.exception.ExpiredException;
 import com.jsp.ebanking.exception.MissMatchException;
 import com.jsp.ebanking.repository.UserRepository;
+import com.jsp.ebanking.util.JwtUtil;
 import com.jsp.ebanking.util.MessageSendingHelper;
 
 import lombok.RequiredArgsConstructor;
@@ -29,7 +35,10 @@ public class UserServiceImpl implements UserService {
 	private final UserRepository userRepository;
 	private final MessageSendingHelper messageSendingHelper;
 	private final PasswordEncoder passwordEncoder;
-
+	private final AuthenticationManager authenticationManager;
+	private final JwtUtil jwtUtil;
+	private final UserDetailsService userDetailsService;
+	
 	@Override
 	public ResponseEntity<ResponseDto> register(UserDto dto) {
 		if (redisService.fetchUserDto(dto.getEmail()) == null) {
@@ -116,5 +125,14 @@ public class UserServiceImpl implements UserService {
 			}
 		}
 	}
+	
+	@Override
+	public ResponseEntity<ResponseDto> login(LoginDto dto) {
+		authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(dto.getEmail(), dto.getPassword()));
+		UserDetails userDetails = userDetailsService.loadUserByUsername(dto.getEmail());
+		String token = jwtUtil.generateToken(userDetails);
+		return ResponseEntity.ok(new ResponseDto("Login Success", token));
+	}
+
 	
 }

@@ -29,3 +29,6 @@ data:
 
 server:
   port: 80
+
+jwt:
+  secret: wetrfxuDr45DRfxyfifrfcgDTfGYhX9LqP7mS2RABCDEF
