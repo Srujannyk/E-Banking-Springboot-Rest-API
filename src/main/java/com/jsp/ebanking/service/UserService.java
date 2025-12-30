@@ -1,12 +1,15 @@
 package com.jsp.ebanking.service;
 
 
+import java.security.Principal;
+
 import org.springframework.http.ResponseEntity;
 
 import com.jsp.ebanking.dto.LoginDto;
 import com.jsp.ebanking.dto.OtpDto;
 import com.jsp.ebanking.dto.ResetPasswordDto;
 import com.jsp.ebanking.dto.ResponseDto;
+import com.jsp.ebanking.dto.SavingAccountDto;
 import com.jsp.ebanking.dto.UserDto;
 
 
@@ -24,4 +27,8 @@ public interface UserService {
 	ResponseEntity<ResponseDto> resetPassword(ResetPasswordDto dto);
 
 	ResponseEntity<ResponseDto> login(LoginDto dto);
+	
+	ResponseEntity<ResponseDto> viewSavingsAccount(Principal principal);
+
+	ResponseEntity<ResponseDto> createSavingsAccount(Principal principal, SavingAccountDto accountDto);
 }

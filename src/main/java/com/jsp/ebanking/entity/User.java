@@ -14,6 +14,7 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.OneToOne;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -43,4 +44,7 @@ public class User {
 	private LocalDateTime createdTime;
 	@UpdateTimestamp
 	private LocalDateTime updatedTime;
+	
+	@OneToOne
+	SavingBankAccount bankAccount;
 }

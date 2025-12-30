@@ -1,5 +1,6 @@
 package com.jsp.ebanking.service;
 
+import java.security.Principal;
 import java.security.SecureRandom;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -14,12 +15,15 @@ import com.jsp.ebanking.dto.LoginDto;
 import com.jsp.ebanking.dto.OtpDto;
 import com.jsp.ebanking.dto.ResetPasswordDto;
 import com.jsp.ebanking.dto.ResponseDto;
+import com.jsp.ebanking.dto.SavingAccountDto;
 import com.jsp.ebanking.dto.UserDto;
+import com.jsp.ebanking.entity.SavingBankAccount;
 import com.jsp.ebanking.entity.User;
 import com.jsp.ebanking.exception.DataExistsException;
 import com.jsp.ebanking.exception.DataNotFoundException;
 import com.jsp.ebanking.exception.ExpiredException;
 import com.jsp.ebanking.exception.MissMatchException;
+import com.jsp.ebanking.repository.SavingAccountRepository;
 import com.jsp.ebanking.repository.UserRepository;
 import com.jsp.ebanking.util.JwtUtil;
 import com.jsp.ebanking.util.MessageSendingHelper;
@@ -38,6 +42,8 @@ public class UserServiceImpl implements UserService {
 	private final AuthenticationManager authenticationManager;
 	private final JwtUtil jwtUtil;
 	private final UserDetailsService userDetailsService;
+	private final SavingAccountRepository savingAccountRepository;
+
 	
 	@Override
 	public ResponseEntity<ResponseDto> register(UserDto dto) {
@@ -68,7 +74,7 @@ public class UserServiceImpl implements UserService {
 				UserDto userDto = redisService.fetchUserDto(dto.getEmail());
 				User user = new User(null, userDto.getName(), userDto.getEmail(), userDto.getMobile(), userDto.getDob(),
 						passwordEncoder.encode(userDto.getPassword()), BankingRole.valueOf(userDto.getRole()), null,
-						null);
+						null, null);
 				userRepository.save(user);
 				redisService.deleteUserDto(dto.getEmail());
 				redisService.deleteUserOtp(dto.getEmail());
@@ -132,6 +138,42 @@ public class UserServiceImpl implements UserService {
 		UserDetails userDetails = userDetailsService.loadUserByUsername(dto.getEmail());
 		String token = jwtUtil.generateToken(userDetails);
 		return ResponseEntity.ok(new ResponseDto("Login Success", token));
+	}
+	@Override
+	public ResponseEntity<ResponseDto> viewSavingsAccount(Principal principal) {
+		User user = getLoggedInUser(principal);
+		SavingBankAccount bankAccount = user.getBankAccount();
+		if (bankAccount == null || !bankAccount.isActive())
+			throw new DataNotFoundException("No Bank Account Exists for " + user.getName());
+		else {
+			return ResponseEntity.ok(new ResponseDto("Account Found", bankAccount));
+		}
+	}
+
+	@Override
+	public ResponseEntity<ResponseDto> createSavingsAccount(Principal principal, SavingAccountDto accountDto) {
+		User user = getLoggedInUser(principal);
+		if (user.getBankAccount() != null)
+			throw new DataExistsException("Account Already Exists and You can not new Create One");
+		else {
+			SavingBankAccount bankAccount = new SavingBankAccount(null, accountDto.getAddress(), "EBNK000001",
+					accountDto.getFullName(), accountDto.getPan(), accountDto.getAadhar(), "EBANK-DEFAULT", 0.0, false,
+					false);
+			savingAccountRepository.save(bankAccount);
+			user.setBankAccount(bankAccount);
+			userRepository.save(user);
+
+			return ResponseEntity.status(201).body(new ResponseDto("Account Created Success", bankAccount));
+		}
+	}
+
+	private User getLoggedInUser(Principal principal) {
+		String email = principal.getName();
+		User user = userRepository.findByEmail(email);
+		if (user == null)
+			throw new DataNotFoundException("Email Not Found in Database");
+		else
+			return user;
 	}
 
 	
