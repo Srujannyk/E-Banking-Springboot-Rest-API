@@ -4,6 +4,7 @@ import java.util.Arrays;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -31,7 +32,7 @@ public class SecurityConfig {
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.setAllowedOrigins(Arrays.asList("http://localhost:5173", "https://ebanking-x7l5.onrender.com"));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
-        configuration.setAllowedHeaders(Arrays.asList("*")); // important
+        configuration.setAllowedHeaders(Arrays.asList("*"));
         configuration.setAllowCredentials(true);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
@@ -53,7 +54,9 @@ public class SecurityConfig {
 	
 	@Bean
 	SecurityFilterChain security(HttpSecurity httpSecurity) throws Exception {
-		return httpSecurity.csrf(x -> x.disable())
+		return httpSecurity
+				.cors(Customizer.withDefaults()) 
+				.csrf(x -> x.disable())
 				.authorizeHttpRequests(x -> x
 						.requestMatchers("/api/v1/user/**").hasRole("USER")
 						.requestMatchers("/api/v1/admin/**").hasRole("ADMIN")

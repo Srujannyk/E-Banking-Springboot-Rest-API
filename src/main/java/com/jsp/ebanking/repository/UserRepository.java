@@ -2,6 +2,8 @@ package com.jsp.ebanking.repository;
 
 
 
+import java.util.Optional;
+
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import com.jsp.ebanking.entity.User;
@@ -15,5 +17,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
 	boolean existsByEmail(String email);
 
 	User findByEmail(String email);
+	
+	Optional<User> findByBankAccount_accountNumber(Long accountNumber);
 
 }
