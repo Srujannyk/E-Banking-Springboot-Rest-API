@@ -13,6 +13,7 @@ import com.jsp.ebanking.dto.ResponseDto;
 import com.jsp.ebanking.dto.SavingAccountDto;
 import com.jsp.ebanking.service.UserService;
 
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 @RestController
@@ -30,7 +31,8 @@ public class UserController {
 
 		@PostMapping("/account/bank")
 		public ResponseEntity<ResponseDto> createSavingsAccount(Principal principal,
-				@RequestBody SavingAccountDto accountDto) {
+				@RequestBody @Valid SavingAccountDto accountDto) 
+		{
 			return userService.createSavingsAccount(principal, accountDto);
 		}
 	
