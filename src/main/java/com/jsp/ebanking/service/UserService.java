@@ -2,6 +2,7 @@ package com.jsp.ebanking.service;
 
 
 import java.security.Principal;
+import java.util.Map;
 
 import org.springframework.http.ResponseEntity;
 
@@ -31,4 +32,11 @@ public interface UserService {
 	ResponseEntity<ResponseDto> viewSavingsAccount(Principal principal);
 
 	ResponseEntity<ResponseDto> createSavingsAccount(Principal principal, SavingAccountDto accountDto);
+
+	ResponseEntity<ResponseDto> checkBalance(Principal prinicpal);
+
+	ResponseEntity<ResponseDto> deposit(Principal principal, Map<String, Double> map);
+
+	ResponseEntity<ResponseDto> confirmPayment(Double amount, String razorpay_payment_id, Principal principal);
+
 }

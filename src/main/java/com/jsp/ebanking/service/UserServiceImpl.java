@@ -3,6 +3,9 @@ package com.jsp.ebanking.service;
 import java.security.Principal;
 import java.security.SecureRandom;
 import java.util.LinkedHashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -12,12 +15,15 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import com.jsp.ebanking.dto.BankBalanceDto;
 import com.jsp.ebanking.dto.LoginDto;
 import com.jsp.ebanking.dto.OtpDto;
+import com.jsp.ebanking.dto.RazorpayDto;
 import com.jsp.ebanking.dto.ResetPasswordDto;
 import com.jsp.ebanking.dto.ResponseDto;
 import com.jsp.ebanking.dto.SavingAccountDto;
 import com.jsp.ebanking.dto.UserDto;
+import com.jsp.ebanking.entity.BankTransactions;
 import com.jsp.ebanking.entity.SavingBankAccount;
 import com.jsp.ebanking.entity.User;
 import com.jsp.ebanking.exception.DataExistsException;
@@ -30,6 +36,7 @@ import com.jsp.ebanking.repository.SavingAccountRepository;
 import com.jsp.ebanking.repository.UserRepository;
 import com.jsp.ebanking.util.JwtUtil;
 import com.jsp.ebanking.util.MessageSendingHelper;
+import com.jsp.ebanking.util.PaymentUtil;
 
 import lombok.RequiredArgsConstructor;
 
@@ -49,6 +56,8 @@ public class UserServiceImpl implements UserService {
 	
 	private final UserMapper userMapper;
 	private final SavingsBankMapper bankMapper;
+	
+	private final PaymentUtil paymentUtil;
 
 	
 	@Override
@@ -180,12 +189,60 @@ public class UserServiceImpl implements UserService {
 			return ResponseEntity.status(201).body(new ResponseDto("Account Created Success", bankAccount));
 		}
 	}
+	@Override
+	public ResponseEntity<ResponseDto> checkBalance(Principal principal) {
+		User user = getLoggedInUser(principal);
+		SavingBankAccount account = user.getBankAccount();
+		if (account == null)
+			throw new DataNotFoundException("No Bank Accounts FOund Linked with This User account");
+		else {
+			return ResponseEntity.ok(new ResponseDto("Account Found",
+					new BankBalanceDto(account.getAccountNumber(), account.getBalance())));
+		}
+	}
 
+	@Override
+	public ResponseEntity<ResponseDto> deposit(Principal principal, Map<String, Double> map) {
+		User user = getLoggedInUser(principal);
+		SavingBankAccount account = user.getBankAccount();
+		if (account == null)
+			throw new DataNotFoundException("No Bank Accounts FOund Linked with This User account");
+		else {
+			Double amount = map.get("amount");
+			RazorpayDto razorpayDto = paymentUtil.createOrder(amount);
+			return ResponseEntity.ok(new ResponseDto("Payment Initialized Complete Payment to Proceed", razorpayDto));
+		}
+	}
+
+	@Override
+	public ResponseEntity<ResponseDto> confirmPayment(Double amount, String razorpay_payment_id, Principal principal) {
+		User user = getLoggedInUser(principal);
+		SavingBankAccount account = user.getBankAccount();
+		if (account == null)
+			throw new DataNotFoundException("No Bank Accounts FOund Linked with This User account");
+		else {
+			List<BankTransactions> transactions = account.getBankTransactions();
+			if (transactions == null)
+				transactions = new LinkedList<BankTransactions>();
+			BankTransactions transaction = new BankTransactions(null, razorpay_payment_id, amount / 100, "DEPOSIT",
+					null, account.getBalance());
+			transactions.add(transaction);
+			account.setBalance(account.getBalance() + amount / 100);
+			account.setBankTransactions(transactions);
+			savingAccountRepository.save(account);
+			return ResponseEntity.ok(new ResponseDto("Deposit Success", transaction));
+		}
+	}
+	
+	
 	private User getLoggedInUser(Principal principal) {
+		if(principal==null)
+			throw new DataNotFoundException("Not Logged in , Invalid Session");
+		
 		String email = principal.getName();
 		User user = userRepository.findByEmail(email);
 		if (user == null)
-			throw new DataNotFoundException("Email Not Found in Database");
+			throw new DataNotFoundException("Not Logged in , Invalid Session");
 		else
 			return user;
 	}

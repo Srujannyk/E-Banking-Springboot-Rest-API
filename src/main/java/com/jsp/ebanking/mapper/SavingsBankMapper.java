@@ -17,6 +17,7 @@ public interface SavingsBankMapper {
 	@Mapping(target = "accountNumber", ignore = true)
 	@Mapping(target = "active", ignore = true)
 	@Mapping(target = "blocked", ignore = true)
+	@Mapping(target = "bankTransactions", ignore = true)
 	SavingBankAccount toEntity(SavingAccountDto dto);
 
 }

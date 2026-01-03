@@ -1,12 +1,15 @@
 package com.jsp.ebanking.controller;
 
 import java.security.Principal;
+import java.util.Map;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.jsp.ebanking.dto.ResponseDto;
@@ -35,6 +38,21 @@ public class UserController {
 		{
 			return userService.createSavingsAccount(principal, accountDto);
 		}
-	
+		
+		@GetMapping("/bank-balance")
+		public ResponseEntity<ResponseDto> checkBalance(Principal principal) {
+			return userService.checkBalance(principal);
+		}
+
+		@PatchMapping("/deposit")
+		public ResponseEntity<ResponseDto> intializeDeposit(@RequestBody Map<String, Double> map, Principal principal) {
+			return userService.deposit(principal, map);
+		}
+
+		@PostMapping("/confirm-deposit")
+		public ResponseEntity<ResponseDto> confirmDeposit(@RequestParam Double amount,
+				@RequestParam String razorpay_payment_id, Principal principal) {
+			return userService.confirmPayment(amount, razorpay_payment_id, principal);
+		}
 
 }
