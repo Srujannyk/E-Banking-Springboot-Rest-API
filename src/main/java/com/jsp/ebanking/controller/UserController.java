@@ -14,6 +14,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.jsp.ebanking.dto.ResponseDto;
 import com.jsp.ebanking.dto.SavingAccountDto;
+import com.jsp.ebanking.dto.TransferDto;
+import com.jsp.ebanking.dto.depositDto;
 import com.jsp.ebanking.service.UserService;
 
 import jakarta.validation.Valid;
@@ -45,14 +47,19 @@ public class UserController {
 		}
 
 		@PatchMapping("/deposit")
-		public ResponseEntity<ResponseDto> intializeDeposit(@RequestBody Map<String, Double> map, Principal principal) {
-			return userService.deposit(principal, map);
+		public ResponseEntity<ResponseDto> intializeDeposit(@RequestBody depositDto dto, Principal principal) {
+			return userService.deposit(principal, dto);
 		}
 
 		@PostMapping("/confirm-deposit")
 		public ResponseEntity<ResponseDto> confirmDeposit(@RequestParam Double amount,
 				@RequestParam String razorpay_payment_id, Principal principal) {
 			return userService.confirmPayment(amount, razorpay_payment_id, principal);
+		}
+		
+		@PostMapping("/transafer")
+		public ResponseEntity<ResponseDto> transferAmount(Principal principal,@RequestBody TransferDto dto) {
+			return userService.transfer(principal,dto);
 		}
 
 }

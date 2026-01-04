@@ -34,4 +34,29 @@ public class AdminController {
 		public ResponseEntity<ResponseDto> approveAccount(@RequestBody AccountNumberDto accountNumberDto) {
 			return adminService.approveBankAccount(accountNumberDto.getAccountNumber());
 	}
+		
+		@GetMapping("/users")
+		public ResponseEntity<ResponseDto> getAllUsers(){
+			return adminService.getAlluser();
+		}
+		
+		@GetMapping("/bank/{email}")
+		public ResponseEntity<ResponseDto> getBankAccount(@PathVariable String email){
+			return adminService.getBankAccount(email);
+		}
+		
+		@GetMapping("/transactions/{accountNumber}")
+		public ResponseEntity<ResponseDto> getBankTransactions(@PathVariable Long accountNumber){
+			return adminService.getBankTransactions(accountNumber);
+		}
+		
+		@PatchMapping("/block/{accountNumber}")
+		public ResponseEntity<ResponseDto> blockAccount(@PathVariable Long accountNumber){
+			return adminService.blockAccount(accountNumber);
+		}
+		
+		@PatchMapping("/unblock/{accountNumber}")
+		public ResponseEntity<ResponseDto> unblockAccount(@PathVariable Long accountNumber){
+			return adminService.unblockAccount(accountNumber);
+		}
 }

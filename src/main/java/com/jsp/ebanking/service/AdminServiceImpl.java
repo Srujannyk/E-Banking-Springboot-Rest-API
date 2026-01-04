@@ -7,7 +7,9 @@ import java.util.List;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
+import com.jsp.ebanking.dto.BankingRole;
 import com.jsp.ebanking.dto.ResponseDto;
+import com.jsp.ebanking.entity.BankTransactions;
 import com.jsp.ebanking.entity.SavingBankAccount;
 import com.jsp.ebanking.entity.User;
 import com.jsp.ebanking.exception.DataNotFoundException;
@@ -49,6 +51,55 @@ public class AdminServiceImpl implements AdminService {
 		account.setActive(true);
 		savingAccountRepository.save(account);
 		return ResponseEntity.ok(new ResponseDto("Account Approved Success", account));
+	}
+	
+	@Override
+	public ResponseEntity<ResponseDto> getAlluser() {
+		List<User> users = userRepository.findByRole(BankingRole.USER);
+		if (users.isEmpty())
+			throw new DataNotFoundException("No Users Found");
+		else
+			return ResponseEntity.ok(new ResponseDto("Users Found", userMapper.toDtoList(users)));
+	}
+
+	@Override
+	public ResponseEntity<ResponseDto> getBankAccount(String email) {
+		User user=userRepository.findByEmail(email);
+		if(user==null)
+			throw new DataNotFoundException("Invalid Email");
+		else {
+			SavingBankAccount account=user.getBankAccount();
+			if(account!=null && account.isActive())
+				return ResponseEntity.ok(new ResponseDto("Account Found", account));
+			else
+				throw new DataNotFoundException("No Account for the User");
+		}
+	}
+
+	@Override
+	public ResponseEntity<ResponseDto> getBankTransactions(Long accountNumber) {
+		SavingBankAccount account=savingAccountRepository.findById(accountNumber).orElseThrow(()->new DataNotFoundException("Invalid Account Number"));
+		List<BankTransactions> transactions=account.getBankTransactions();
+		if(transactions.isEmpty())
+			throw new DataNotFoundException("No Transactions Found");
+		else 
+			return ResponseEntity.ok(new ResponseDto("Transactions Found", transactions));
+	}
+
+	@Override
+	public ResponseEntity<ResponseDto> blockAccount(Long accountNumber) {
+		SavingBankAccount account=savingAccountRepository.findById(accountNumber).orElseThrow(()->new DataNotFoundException("Invalid Account Number"));
+		account.setBlocked(true);
+		savingAccountRepository.save(account);
+		return ResponseEntity.ok(new ResponseDto("Account Blocked Success", account));
+	}
+
+	@Override
+	public ResponseEntity<ResponseDto> unblockAccount(Long accountNumber) {
+		SavingBankAccount account=savingAccountRepository.findById(accountNumber).orElseThrow(()->new DataNotFoundException("Invalid Account Number"));
+		account.setBlocked(false);
+		savingAccountRepository.save(account);
+		return ResponseEntity.ok(new ResponseDto("Account Blocked Success", account));
 	}
 
 }

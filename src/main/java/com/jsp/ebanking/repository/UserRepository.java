@@ -2,10 +2,12 @@ package com.jsp.ebanking.repository;
 
 
 
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 
+import com.jsp.ebanking.dto.BankingRole;
 import com.jsp.ebanking.entity.User;
 
 
@@ -19,5 +21,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
 	User findByEmail(String email);
 	
 	Optional<User> findByBankAccount_accountNumber(Long accountNumber);
+	
+	List<User> findByRole(BankingRole user);
 
 }

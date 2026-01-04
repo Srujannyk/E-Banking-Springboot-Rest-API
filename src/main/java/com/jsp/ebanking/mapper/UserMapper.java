@@ -1,6 +1,8 @@
 package com.jsp.ebanking.mapper;
 
 
+import java.util.List;
+
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,5 +27,7 @@ public abstract class UserMapper {
 
 	@Mapping(target = "password",expression = "java(\"***************\")")
 	public abstract UserDto toDto(User user);
+	
+	public abstract List<UserDto> toDtoList(List<User> users);
 
 }

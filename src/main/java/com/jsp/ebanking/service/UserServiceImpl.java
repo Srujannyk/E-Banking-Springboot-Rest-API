@@ -22,7 +22,9 @@ import com.jsp.ebanking.dto.RazorpayDto;
 import com.jsp.ebanking.dto.ResetPasswordDto;
 import com.jsp.ebanking.dto.ResponseDto;
 import com.jsp.ebanking.dto.SavingAccountDto;
+import com.jsp.ebanking.dto.TransferDto;
 import com.jsp.ebanking.dto.UserDto;
+import com.jsp.ebanking.dto.depositDto;
 import com.jsp.ebanking.entity.BankTransactions;
 import com.jsp.ebanking.entity.SavingBankAccount;
 import com.jsp.ebanking.entity.User;
@@ -30,6 +32,7 @@ import com.jsp.ebanking.exception.DataExistsException;
 import com.jsp.ebanking.exception.DataNotFoundException;
 import com.jsp.ebanking.exception.ExpiredException;
 import com.jsp.ebanking.exception.MissMatchException;
+import com.jsp.ebanking.exception.PaymentFailedException;
 import com.jsp.ebanking.mapper.SavingsBankMapper;
 import com.jsp.ebanking.mapper.UserMapper;
 import com.jsp.ebanking.repository.SavingAccountRepository;
@@ -38,6 +41,7 @@ import com.jsp.ebanking.util.JwtUtil;
 import com.jsp.ebanking.util.MessageSendingHelper;
 import com.jsp.ebanking.util.PaymentUtil;
 
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -201,17 +205,17 @@ public class UserServiceImpl implements UserService {
 		}
 	}
 
-	@Override
-	public ResponseEntity<ResponseDto> deposit(Principal principal, Map<String, Double> map) {
+	public ResponseEntity<ResponseDto> deposit(Principal principal, depositDto dto) {
 		User user = getLoggedInUser(principal);
 		SavingBankAccount account = user.getBankAccount();
-		if (account == null)
-			throw new DataNotFoundException("No Bank Accounts FOund Linked with This User account");
-		else {
-			Double amount = map.get("amount");
-			RazorpayDto razorpayDto = paymentUtil.createOrder(amount);
-			return ResponseEntity.ok(new ResponseDto("Payment Initialized Complete Payment to Proceed", razorpayDto));
+		if (account == null) {
+			throw new DataNotFoundException(
+					"No Bank Account Found Linked with This User Account");
 		}
+		Double amount = dto.getAmount();
+		RazorpayDto razorpayDto = paymentUtil.createOrder(amount);
+		return ResponseEntity.ok(
+				new ResponseDto("Payment Initialized. Complete Payment to Proceed", razorpayDto));
 	}
 
 	@Override
@@ -225,7 +229,7 @@ public class UserServiceImpl implements UserService {
 			if (transactions == null)
 				transactions = new LinkedList<BankTransactions>();
 			BankTransactions transaction = new BankTransactions(null, razorpay_payment_id, amount / 100, "DEPOSIT",
-					null, account.getBalance());
+					null, account.getBalance(), account.getBalance() + amount / 100);
 			transactions.add(transaction);
 			account.setBalance(account.getBalance() + amount / 100);
 			account.setBankTransactions(transactions);
@@ -233,10 +237,54 @@ public class UserServiceImpl implements UserService {
 			return ResponseEntity.ok(new ResponseDto("Deposit Success", transaction));
 		}
 	}
+	@Override
+	@Transactional
+	public ResponseEntity<ResponseDto> transfer(Principal principal, TransferDto dto) {
+		User user = getLoggedInUser(principal);
+		SavingBankAccount fromAccount = user.getBankAccount();
+		SavingBankAccount toAccount = savingAccountRepository.findById(dto.getToAccountNumber())
+				.orElseThrow(() -> new DataNotFoundException("Invalid ToAccount Number"));
+		if (fromAccount == null)
+			throw new DataNotFoundException("No Bank Accounts Found Linked with This User account");
+		else {
+			if (!fromAccount.isActive() || fromAccount.isBlocked() || toAccount.isBlocked() || !toAccount.isActive())
+				throw new PaymentFailedException("Account is Not Active or Blocked Contact Admin");
+			else {
+				if (fromAccount.getBalance() < dto.getAmount())
+					throw new MissMatchException("Not Enough Balance in Your Account");
+				else {
+					List<BankTransactions> fromTransactions = fromAccount.getBankTransactions();
+					if (fromTransactions == null)
+						fromTransactions = new LinkedList<BankTransactions>();
+					BankTransactions fromTransaction = new BankTransactions(null, "", dto.getAmount(), "DEBIT", null,
+							fromAccount.getBalance(), fromAccount.getBalance() - dto.getAmount());
+					fromTransactions.add(fromTransaction);
+					fromAccount.setBalance(fromAccount.getBalance() - dto.getAmount());
+					fromAccount.setBankTransactions(fromTransactions);
+					savingAccountRepository.save(fromAccount);
+
+					List<BankTransactions> toTransactions = toAccount.getBankTransactions();
+					if (toTransactions == null)
+						toTransactions = new LinkedList<BankTransactions>();
+					BankTransactions toTransaction = new BankTransactions(null, "", dto.getAmount(), "CREDIT", null,
+							toAccount.getBalance(), toAccount.getBalance() + dto.getAmount());
+					toTransactions.add(toTransaction);
+					toAccount.setBalance(toAccount.getBalance() + dto.getAmount());
+
+					toAccount.setBankTransactions(toTransactions);
+					savingAccountRepository.save(toAccount);
+
+					return ResponseEntity.ok(new ResponseDto("Amount Transfered Success", dto));
+				}
+			}
+		}
+
+	}
+	
 	
 	
 	private User getLoggedInUser(Principal principal) {
-		if(principal==null)
+		if (principal == null)
 			throw new DataNotFoundException("Not Logged in , Invalid Session");
 		
 		String email = principal.getName();
